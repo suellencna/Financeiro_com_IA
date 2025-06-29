@@ -50,11 +50,11 @@ Até ao momento, o sistema conta com as seguintes funcionalidades:
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
+    git clone [https://github.com/suellencna/Financeiro_com_IA.git](https://github.com/suellencna/Financeiro_com_IA.git)
     ```
 2.  **Navegue para a pasta do projeto e crie um ambiente virtual:**
     ```bash
-    cd nome-do-repositorio
+    cd Financeiro_com_IA
     python -m venv .venv
     ```
 3.  **Ative o ambiente virtual:**
