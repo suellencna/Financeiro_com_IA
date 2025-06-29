@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Planeamento de Orçamento{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-6">Orçamento Mensal</h1>
+<form action="{{ url_for('orcamento') }}" method="POST">
+    <!-- Seção de Filtros -->
+    <div class="bg-white p-4 rounded-xl shadow-md mb-8 flex flex-wrap items-end gap-4">
+        <div>
+            <label for="mes" class="block text-sm font-medium text-gray-700">Mês do Orçamento</label>
+            <select id="mes" name="mes" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" onchange="this.form.submit()">
+                {% for mes in meses_para_filtro %}<option value="{{ mes.num }}" {% if mes.num == filtros_ativos.mes %}selected{% endif %}>{{ mes.nome }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="ano" class="block text-sm font-medium text-gray-700">Ano</label>
+            <input type="number" name="ano" id="ano" value="{{ filtros_ativos.ano }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" onchange="this.form.submit()">
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-lg">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for categoria in categorias %}
+            <div>
+                <label for="{{ categoria }}" class="block text-sm font-medium text-gray-700">{{ categoria }}</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><span class="text-gray-500 sm:text-sm">R$</span></div>
+                    <input type="number" step="0.01" name="{{ categoria }}" id="{{ categoria }}" value="{{ orcamento_atual.get(categoria, '') }}" class="block w-full rounded-md border-gray-300 pl-10 pr-4 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="0.00">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-8 text-right">
+            <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition duration-300">Salvar Orçamento</button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Altera o método do formulário para GET quando os filtros mudam, para não salvar dados
+    document.querySelectorAll('#mes, #ano').forEach(el => {
+        el.addEventListener('change', () => {
+            const form = el.closest('form');
+            form.method = 'GET';
+            form.submit();
+        });
+    });
+</script>
+{% endblock %}

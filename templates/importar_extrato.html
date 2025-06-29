@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Importar com IA{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-purple-700 mb-2">✨ Importar Extrato com IA</h1>
+<p class="text-gray-600 mb-8">Poupe tempo e deixe a Inteligência Artificial trabalhar por si.</p>
+
+<div class="bg-white p-8 rounded-xl shadow-lg">
+    <form action="{{ url_for('importar_extrato') }}" method="post">
+        <div class="mb-6">
+            <label for="id_conta" class="block text-lg font-medium text-gray-700 mb-2">1. Selecione a Conta do Extrato:</label>
+            <select name="id_conta" id="id_conta" required class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500">
+                <option value="" disabled selected>Escolha uma conta...</option>
+                {% for conta in contas %}
+                    <option value="{{ conta.id }}">{{ conta.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="extrato" class="block text-lg font-medium text-gray-700 mb-2">2. Cole o seu extrato aqui:</label>
+            <textarea name="extrato" id="extrato" rows="15" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500" placeholder="Cole aqui o texto do seu extrato bancário ou da fatura do cartão..."></textarea>
+        </div>
+        <button type="submit" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition duration-300 text-lg">
+            Processar com IA
+        </button>
+    </form>
+</div>
+{% endblock %}

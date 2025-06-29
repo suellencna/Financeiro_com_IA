@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Financeiro{% endblock %}
+
+{% block head %}
+    <!-- Chart.js e o novo plugin para labels -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+{% endblock %}
+
+{% block content %}
+<div x-data="pageController()">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Financeiro</h1>
+
+    <!-- Resumo do Mês -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-green-100 p-6 rounded-xl shadow"><h3 class="font-bold text-green-800">Total de Receitas</h3><p class="text-2xl font-semibold text-green-900">R$ {{ "%.2f"|format(resumo_mes.receitas) }}</p></div>
+        <div class="bg-red-100 p-6 rounded-xl shadow"><h3 class="font-bold text-red-800">Total de Gastos</h3><p class="text-2xl font-semibold text-red-900">R$ {{ "%.2f"|format(resumo_mes.gastos) }}</p></div>
+        <div class="bg-yellow-100 p-6 rounded-xl shadow"><h3 class="font-bold text-yellow-800">Total Investido</h3><p class="text-2xl font-semibold text-yellow-900">R$ {{ "%.2f"|format(resumo_mes.investido) }}</p></div>
+        <div class="bg-blue-100 p-6 rounded-xl shadow"><h3 class="font-bold text-blue-800">Saldo do Mês</h3><p class="text-2xl font-bold {{ 'text-blue-900' if resumo_mes.saldo >= 0 else 'text-red-700' }}">R$ {{ "%.2f"|format(resumo_mes.saldo) }}</p></div>
+    </section>
+
+    <!-- Checklist de Contas Pendentes -->
+    {% if contas_pendentes %}
+    <section class="bg-yellow-100 border border-yellow-300 p-6 rounded-xl shadow-lg mb-8">
+        <h2 class="text-xl font-bold text-yellow-800 mb-4">Lançamentos Pendentes (Contas Variáveis)</h2>
+        <div class="space-y-4">
+            {% for conta in contas_pendentes %}
+            <form action="{{ url_for('lancar_pendencia') }}" method="POST" class="flex flex-wrap items-center gap-4 bg-white p-4 rounded-lg">
+                <input type="hidden" name="descricao" value="{{ conta.descricao }}"><input type="hidden" name="categoria" value="{{ conta.categoria_gasto }}"><input type="hidden" name="data" value="{{ '%s-%s-%s'|format(filtros_ativos.ano, '%02d'|format(filtros_ativos.mes), '%02d'|format(conta.dia_vencimento)) }}">
+                <div class="flex-grow font-semibold">{{ conta.descricao }} <span class="text-gray-500 font-normal">(Vence dia {{ conta.dia_vencimento }})</span></div>
+                <div><input type="number" step="0.01" name="valor" placeholder="Valor (R$)" required class="p-2 border border-gray-300 rounded-md w-36"></div>
+                <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Lançar</button>
+            </form>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Acompanhamento do Orçamento -->
+    <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
+        <h2 class="text-xl font-bold text-gray-700 mb-4">Acompanhamento do Orçamento</h2>
+        <div class="space-y-4">
+            {% for item in dados_orcamento %}{% if item.planejado > 0 %}
+            <div>
+                <div class="flex justify-between mb-1"><span class="text-base font-medium text-gray-700">{{ item.categoria }}</span><span class="text-sm font-medium text-gray-500">Gasto: R$ {{ "%.2f"|format(item.gasto) }} de R$ {{ "%.2f"|format(item.planejado) }}</span></div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    {% set cor_barra = 'bg-green-500' if item.percentual < 75 else ('bg-yellow-400' if item.percentual < 95 else 'bg-red-500') %}
+                    <div class="{{ cor_barra }} h-4 rounded-full" style="width: {{ item.percentual }}%"></div>
+                </div>
+            </div>
+            {% endif %}{% endfor %}
+        </div>
+    </section>
+
+    <!-- Seção de Filtros -->
+    <div class="bg-white p-4 rounded-xl shadow-md mb-8">
+        <form id="filter-form" method="GET" action="{{ url_for('dashboard') }}" class="flex flex-wrap items-end gap-4">
+            <div><label for="mes" class="block text-sm font-medium text-gray-700">Mês</label><select id="mes" name="mes" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">{% for mes in meses_para_filtro %}<option value="{{ mes.num }}" {% if mes.num == filtros_ativos.mes %}selected{% endif %}>{{ "%02d"|format(mes.num) }} - {{ mes.nome }}</option>{% endfor %}</select></div>
+            <div><label for="ano" class="block text-sm font-medium text-gray-700">Ano</label><input type="number" name="ano" id="ano" value="{{ filtros_ativos.ano }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="categoria" class="block text-sm font-medium text-gray-700">Categoria de Gasto</label><select id="categoria" name="categoria" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"><option value="todos" {% if 'todos' == filtros_ativos.categoria %}selected{% endif %}>Todas</option>{% for cat in categorias_gasto %}<option value="{{ cat }}" {% if cat == filtros_ativos.categoria %}selected{% endif %}>{{ cat }}</option>{% endfor %}</select></div>
+            <button type="submit" class="bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition duration-300">Filtrar</button>
+        </form>
+    </div>
+
+    <!-- Seção dos Gráficos -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="text-xl font-bold text-gray-700 mb-4">Gastos por Categoria ({{ "%02d"|format(filtros_ativos.mes) }}/{{ filtros_ativos.ano }})</h2><canvas id="gastosPorCategoriaChart"></canvas></div>
+        <div class="bg-white p-6 rounded-xl shadow-lg"><h2 class="text-xl font-bold text-gray-700 mb-4">Fluxo de Caixa ({{ filtros_ativos.ano }})</h2><canvas id="fluxoMensalChart"></canvas></div>
+    </section>
+
+    <!-- Tabela de Detalhamento de Gastos -->
+    <section class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold text-gray-700 mb-4">Detalhes dos Gastos</h2>
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Onde/O quê</th><th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagamento</th><th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor (R$)</th><th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th></tr></thead><tbody class="bg-white divide-y divide-gray-200">
+        {% for gasto in gastos %}
+        <tr>
+            <td class="px-4 py-4 whitespace-nowrap text-sm">{{ gasto.data.split('-') | reverse | join('-') }}</td><td class="px-4 py-4 whitespace-nowrap text-sm font-semibold">{{ gasto.tipo }}</td><td class="px-4 py-4 text-sm"><p class="font-medium text-gray-800">{{ gasto.onde }}</p><p class="text-gray-500">{{ gasto.oque }}</p></td><td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ gasto.forma_pagamento }}</td><td class="px-4 py-4 whitespace-nowrap text-sm text-right font-mono text-red-600">{{ "%.2f"|format(gasto.valor) }}</td>
+            <td class="px-4 py-4 whitespace-nowrap text-center text-sm">
+                <div class="flex justify-center items-center gap-4">
+                    <button @click="openEditModal({{ gasto.id }})" class="text-indigo-600 hover:text-indigo-900 font-semibold">Editar</button>
+                    <form action="{{ url_for('excluir_lancamento', tabela='gastos', id=gasto.id) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
+                        <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">Excluir</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center py-10 text-gray-500">Nenhum gasto encontrado para os filtros selecionados.</td></tr>
+        {% endfor %}
+        </tbody></table></div>
+    </section>
+
+    <!-- Modal de Edição -->
+    <div x-show="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none;"><div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"><div x-show="isModalOpen" @click="isModalOpen = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div><span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span><div x-show="isModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
+        <h3 class="text-2xl font-bold text-gray-800" id="modal-title">Editar Gasto</h3>
+        <form :action="'/editar/gasto/' + activeGasto.id" method="POST" class="mt-4 space-y-4">
+            <div><label for="tipo_edit" class="block text-sm font-medium text-gray-700">Tipo</label><select id="tipo_edit" name="tipo" x-model="activeGasto.tipo" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">{% for cat in categorias_gasto %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select></div>
+            <div><label for="onde_edit" class="block text-sm font-medium text-gray-700">Onde</label><input type="text" id="onde_edit" name="onde" x-model="activeGasto.onde" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="oque_edit" class="block text-sm font-medium text-gray-700">O quê</label><input type="text" id="oque_edit" name="oque" x-model="activeGasto.oque" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="valor_edit" class="block text-sm font-medium text-gray-700">Valor (R$)</label><input type="number" step="0.01" id="valor_edit" name="valor" x-model="activeGasto.valor" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="data_edit" class="block text-sm font-medium text-gray-700">Data</label><input type="date" id="data_edit" name="data" x-model="activeGasto.data" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+            <div><label for="forma_pagamento_edit" class="block text-sm font-medium text-gray-700">Forma de Pagamento</label><select id="forma_pagamento_edit" name="forma_pagamento" x-model="activeGasto.forma_pagamento" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">{% for f in formas_pagamento %}<option value="{{ f }}">{{ f }}</option>{% endfor %}</select></div>
+            <div class="flex justify-end gap-4 pt-4"><button type="button" @click="isModalOpen = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200">Cancelar</button><button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700">Salvar Alterações</button></div>
+        </form>
+    </div></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    Chart.register(ChartDataLabels);
+    const gastosData = {{ gastos | tojson | safe }};
+    function pageController() {
+        return {
+            isModalOpen: false,
+            activeGasto: {},
+            openEditModal(gastoId) {
+                const gastoParaEditar = gastosData.find(g => g.id === gastoId);
+                if (gastoParaEditar) {
+                    this.activeGasto = { ...gastoParaEditar };
+                    this.activeGasto.oque = this.activeGasto.oque.replace(/\s\(\d+\/\d+\)$/, '');
+                    this.isModalOpen = true;
+                }
+            }
+        }
+    }
+    const formatadorReais = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    let chartGastos = null; let chartFluxo = null;
+    const randomColor = () => `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`;
+    async function renderizarGraficoGastos() {
+        const ctx = document.getElementById('gastosPorCategoriaChart'); if (!ctx) return; if (chartGastos) chartGastos.destroy();
+        const url = `/api/dados/gastos_por_categoria?mes={{ filtros_ativos.mes }}&ano={{ filtros_ativos.ano }}`;
+        const response = await fetch(url); const dados = await response.json();
+        chartGastos = new Chart(ctx, {
+            type: 'pie',
+            data: { labels: dados.labels, datasets: [{ label: 'Total Gasto', data: dados.data, backgroundColor: dados.labels.map(() => randomColor()), borderWidth: 2, borderColor: '#fff' }] },
+            options: { responsive: true, plugins: { legend: { position: 'top' }, datalabels: { formatter: (value, ctx) => { let sum = 0; let dataArr = ctx.chart.data.datasets[0].data; dataArr.map(data => { sum += data; }); if (sum === 0) return '0%'; let percentage = (value*100 / sum).toFixed(1)+"%"; return percentage; }, color: '#fff', font: { weight: 'bold', size: 14 } } } }
+        });
+    }
+    async function renderizarGraficoFluxoMensal() {
+        const ctx = document.getElementById('fluxoMensalChart'); if (!ctx) return; if (chartFluxo) chartFluxo.destroy();
+        const url = `/api/dados/fluxo_mensal?ano={{ filtros_ativos.ano }}`;
+        const response = await fetch(url); const dados = await response.json();
+        chartFluxo = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: dados.labels, datasets: [ { label: 'Receitas', data: dados.receitas, backgroundColor: 'rgba(75, 192, 192, 0.7)' }, { label: 'Gastos', data: dados.gastos, backgroundColor: 'rgba(255, 99, 132, 0.7)' } ] },
+            options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { position: 'bottom' }, datalabels: { anchor: 'end', align: 'end', formatter: (value) => value > 0 ? formatadorReais.format(value) : null, color: '#555', font: { weight: 'bold' } } } }
+        });
+    }
+    document.addEventListener('DOMContentLoaded', () => { renderizarGraficoGastos(); renderizarGraficoFluxoMensal(); });
+</script>
+{% endblock %}

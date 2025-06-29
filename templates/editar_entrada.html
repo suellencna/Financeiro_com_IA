@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Entrada{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-6">Editar Entrada</h1>
+
+<div class="bg-white p-6 rounded-2xl shadow-lg">
+    <form action="{{ url_for('editar_entrada', id=entrada.id) }}" method="POST">
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="descricao_entrada" class="block text-sm font-medium text-gray-700">Descrição da Entrada</label>
+                <input type="text" name="descricao_entrada" id="descricao_entrada" required value="{{ entrada.descricao }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+            <div>
+                <label for="data_entrada" class="block text-sm font-medium text-gray-700">Data da Entrada</label>
+                <input type="date" name="data_entrada" id="data_entrada" required value="{{ entrada.data }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+            </div>
+         </div>
+
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-6" x-data>
+            <!-- Seção de Receitas -->
+            <div id="receitas-container">
+                <h3 class="text-lg font-semibold text-green-700">Receitas (+)</h3>
+                {% for item in receitas %}
+                    <div class="flex items-center space-x-2 mb-2">
+                        <input type="text" name="receita_desc[]" placeholder="Descrição" class="w-1/2 p-2 border border-gray-300 rounded-md" value="{{ item.descricao }}">
+                        <input type="number" step="0.01" name="receita_valor[]" placeholder="Valor (R$)" class="w-1/3 p-2 border border-gray-300 rounded-md" value="{{ item.valor }}">
+                        <button type="button" @click="$el.parentElement.remove()" class="bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-md hover:bg-gray-400">X</button>
+                    </div>
+                {% else %}
+                    <!-- Adiciona um campo em branco se não houver receitas -->
+                     <div class="flex items-center space-x-2 mb-2">
+                        <input type="text" name="receita_desc[]" placeholder="Descrição" class="w-1/2 p-2 border border-gray-300 rounded-md" value="">
+                        <input type="number" step="0.01" name="receita_valor[]" placeholder="Valor (R$)" class="w-1/3 p-2 border border-gray-300 rounded-md" value="">
+                        <button type="button" @click="$el.parentElement.remove()" class="bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-md hover:bg-gray-400">X</button>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Seção de Descontos -->
+            <div id="descontos-container">
+                <h3 class="text-lg font-semibold text-red-700">Descontos (-)</h3>
+                {% for item in descontos %}
+                     <div class="flex items-center space-x-2 mb-2">
+                        <input type="text" name="desconto_desc[]" placeholder="Descrição" class="w-1/2 p-2 border border-gray-300 rounded-md" value="{{ item.descricao }}">
+                        <input type="number" step="0.01" name="desconto_valor[]" placeholder="Valor (R$)" class="w-1/3 p-2 border border-gray-300 rounded-md" value="{{ item.valor }}">
+                        <button type="button" @click="$el.parentElement.remove()" class="bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-md hover:bg-gray-400">X</button>
+                    </div>
+                {% else %}
+                     <div class="flex items-center space-x-2 mb-2">
+                        <input type="text" name="desconto_desc[]" placeholder="Descrição" class="w-1/2 p-2 border border-gray-300 rounded-md" value="">
+                        <input type="number" step="0.01" name="desconto_valor[]" placeholder="Valor (R$)" class="w-1/3 p-2 border border-gray-300 rounded-md" value="">
+                        <button type="button" @click="$el.parentElement.remove()" class="bg-gray-300 text-gray-700 font-bold py-2 px-3 rounded-md hover:bg-gray-400">X</button>
+                    </div>
+                {% endfor %}
+            </div>
+         </div>
+
+        <div class="flex items-center justify-between mt-6">
+            <div class="flex space-x-4">
+                <button type="button" @click="adicionarItem('receita')" class="bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600">Adicionar Receita</button>
+                <button type="button" @click="adicionarItem('desconto')" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600">Adicionar Desconto</button>
+            </div>
+            <button type="submit" class="bg-gray-800 text-white font-bold py-3 px-8 rounded-lg hover:bg-gray-900 transition duration-300">Salvar Alterações</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% endblock %}

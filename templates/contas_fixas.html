@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Gerir Contas Fixas{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-8">Contas Fixas e Recorrentes</h1>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Formulário de Adição -->
+    <div class="lg:col-span-1" x-data="{ tipoValor: 'fixo' }">
+        <div class="bg-white p-6 rounded-xl shadow-lg sticky top-28">
+            <h2 class="text-xl font-bold text-gray-700 mb-4">Adicionar Nova Conta</h2>
+            <form action="{{ url_for('adicionar_conta_fixa') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="descricao" class="block text-sm font-medium text-gray-700">Descrição</label>
+                    <input type="text" name="descricao" id="descricao" required placeholder="Ex: Aluguel, Conta de Luz" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tipo de Valor</label>
+                    <div class="mt-1 flex rounded-md shadow-sm">
+                        <button type="button" @click="tipoValor = 'fixo'" :class="{'bg-indigo-600 text-white': tipoValor === 'fixo', 'bg-white text-gray-700': tipoValor !== 'fixo'}" class="px-4 py-2 border border-gray-300 rounded-l-md w-1/2">Fixo</button>
+                        <button type="button" @click="tipoValor = 'variavel'" :class="{'bg-indigo-600 text-white': tipoValor === 'variavel', 'bg-white text-gray-700': tipoValor !== 'variavel'}" class="px-4 py-2 border border-gray-300 rounded-r-md w-1/2 -ml-px">Variável</button>
+                    </div>
+                    <input type="hidden" name="tipo_valor" x-model="tipoValor">
+                </div>
+                <div x-show="tipoValor === 'fixo'">
+                     <label for="valor" class="block text-sm font-medium text-gray-700">Valor Fixo (R$)</label>
+                     <input type="number" step="0.01" name="valor" id="valor" x-bind:required="tipoValor === 'fixo'" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                 <div>
+                    <label for="dia_vencimento" class="block text-sm font-medium text-gray-700">Dia do Vencimento</label>
+                    <input type="number" name="dia_vencimento" id="dia_vencimento" min="1" max="31" required placeholder="Ex: 5" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="categoria_gasto" class="block text-sm font-medium text-gray-700">Categoria do Gasto</label>
+                    <select id="categoria_gasto" name="categoria_gasto" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        {% for cat in categorias_gasto %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-300">Adicionar Conta Fixa</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Contas Cadastradas -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="text-xl font-bold text-gray-700 mb-4">Minhas Contas Fixas</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Vencimento</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ação</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for conta in contas %}
+                    <tr>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">{{ conta.descricao }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm">
+                            {% if conta.tipo_valor == 'fixo' %}
+                                <span class="font-mono">R$ {{ "%.2f"|format(conta.valor) }}</span>
+                            {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Variável</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-center">Dia {{ conta.dia_vencimento }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{{ conta.categoria_gasto }}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-center text-sm">
+                            <form action="{{ url_for('excluir_conta_fixa', id=conta.id) }}" method="POST" onsubmit="return confirm('Tem certeza?');">
+                                <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-10 text-gray-500">Nenhuma conta fixa cadastrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

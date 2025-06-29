@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Minhas Entradas{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-8">Minhas Entradas</h1>
+
+<div class="bg-white p-6 rounded-xl shadow-lg">
+     <div class="overflow-x-auto">
+         <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for entrada in entradas %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ entrada.data.split('-') | reverse | join('-') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold">{{ entrada.descricao }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        <div class="flex justify-center items-center gap-4">
+                            <a href="{{ url_for('editar_entrada', id=entrada.id) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">Editar</a>
+                            <form action="{{ url_for('excluir_lancamento', tabela='entradas', id=entrada.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir esta entrada e todos os seus itens?');">
+                                <button type="submit" class="text-red-600 hover:text-red-900 font-semibold">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center py-10 text-gray-500">Nenhuma entrada cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+         </table>
+     </div>
+</div>
+{% endblock %}

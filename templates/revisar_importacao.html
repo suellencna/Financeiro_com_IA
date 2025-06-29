@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Revisar Lançamentos{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold text-gray-800 mb-2">Revisar Lançamentos Importados</h1>
+<p class="text-gray-600 mb-6">Verifique os dados extraídos pela IA e confirme para salvar.</p>
+
+<form action="{{ url_for('salvar_importacao') }}" method="POST">
+    <div class="bg-white p-2 sm:p-6 rounded-xl shadow-lg">
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="p-4 text-center text-xs font-medium text-gray-500 uppercase">Incluir</th>
+                        <th class="p-4 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                        <th class="p-4 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                        <th class="p-4 text-left text-xs font-medium text-gray-500 uppercase">Valor (R$)</th>
+                        <th class="p-4 text-left text-xs font-medium text-gray-500 uppercase">Categoria / Tipo</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for transacao in transacoes %}
+                    <tr class="{{ 'bg-green-50' if transacao.tipo_transacao == 'entrada' else 'bg-red-50' }}">
+                        <td class="p-4 text-center">
+                            <input type="checkbox" name="incluir_{{ loop.index0 }}" checked class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <input type="hidden" name="tipo_transacao" value="{{ transacao.tipo_transacao }}">
+                        </td>
+                        <td class="p-4"><input type="date" name="data" value="{{ transacao.data }}" class="w-full p-2 border-gray-300 rounded-md"></td>
+                        <td class="p-4"><input type="text" name="descricao" value="{{ transacao.descricao }}" class="w-full p-2 border-gray-300 rounded-md"></td>
+                        <td class="p-4"><input type="number" step="0.01" name="valor" value="{{ transacao.valor }}" class="w-full p-2 border-gray-300 rounded-md"></td>
+                        <td class="p-4">
+                            <select name="categoria" class="w-full p-2 border-gray-300 rounded-md">
+                                {% if transacao.tipo_transacao == 'gasto' %}
+                                    {% for cat in categorias_gasto %}<option value="{{ cat }}" {% if cat == transacao.categoria_sugerida %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+                                {% else %}
+                                    {% for cat in categorias_entrada %}<option value="{{ cat }}" {% if cat == transacao.categoria_sugerida %}selected{% endif %}>{{ cat }}</option>{% endfor %}
+                                {% endif %}
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="mt-6 text-right">
+        <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 transition duration-300 text-lg">
+            Salvar Lançamentos Selecionados
+        </button>
+    </div>
+</form>
+{% endblock %}
